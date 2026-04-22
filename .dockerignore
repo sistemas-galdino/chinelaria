@@ -1,0 +1,16 @@
+node_modules
+.next
+.turbo
+.git
+.github
+.vscode
+.idea
+.venv
+__pycache__
+legacy
+docker
+*.md
+.DS_Store
+.env
+.env.local
+.env.*.local
