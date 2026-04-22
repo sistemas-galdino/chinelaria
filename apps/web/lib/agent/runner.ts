@@ -10,6 +10,8 @@ import {
   profileToSummary,
 } from './load-context.ts';
 import { maybeUpdateProfile } from './update-profile.ts';
+import { buildImageContentBlock, transcribeAudio } from './media.ts';
+import { getSupabaseAdminClient } from '../supabase/server.ts';
 
 /**
  * Executa um turno completo do agente para uma conversa:
@@ -52,12 +54,49 @@ export async function runAgentTurn(conversationId: string): Promise<void> {
     maxTokens: typeof config.max_tokens === 'number' ? config.max_tokens : undefined,
   });
 
+  // Multimodal: transcreve áudio, anexa imagem, ou usa texto puro.
+  let humanMessage: HumanMessage;
+  let customerTextForProfile = lastCustomerMessage.content ?? '';
+
+  if (lastCustomerMessage.media_type === 'audio' && lastCustomerMessage.media_url) {
+    try {
+      const transcript = await transcribeAudio(
+        lastCustomerMessage.media_url,
+        lastCustomerMessage.media_mimetype,
+      );
+      const text = transcript ? `[Áudio transcrito] ${transcript}` : '[Áudio sem fala detectada]';
+      humanMessage = new HumanMessage(text);
+      customerTextForProfile = transcript;
+      // persiste transcrição na message para o dashboard mostrar
+      await getSupabaseAdminClient()
+        .from('messages')
+        .update({ content: text })
+        .eq('id', lastCustomerMessage.id);
+    } catch (err) {
+      console.error(`[agent] whisper failed for ${conversationId}`, err);
+      humanMessage = new HumanMessage('[Cliente enviou um áudio mas a transcrição falhou]');
+    }
+  } else if (lastCustomerMessage.media_type === 'image' && lastCustomerMessage.media_url) {
+    try {
+      const block = await buildImageContentBlock(
+        lastCustomerMessage.media_url,
+        lastCustomerMessage.media_mimetype,
+      );
+      const caption = lastCustomerMessage.content?.trim() || 'Veja a foto que mandei.';
+      humanMessage = new HumanMessage({ content: [{ type: 'text', text: caption }, block] });
+    } catch (err) {
+      console.error(`[agent] image fetch failed for ${conversationId}`, err);
+      humanMessage = new HumanMessage(
+        lastCustomerMessage.content ?? '[Cliente enviou uma imagem mas não consegui carregá-la]',
+      );
+    }
+  } else {
+    humanMessage = new HumanMessage(lastCustomerMessage.content ?? '[mensagem vazia]');
+  }
+
   const result = await agent.invoke(
     {
-      messages: [
-        new SystemMessage(systemPrompt),
-        new HumanMessage(lastCustomerMessage.content ?? '[mensagem vazia]'),
-      ],
+      messages: [new SystemMessage(systemPrompt), humanMessage],
     },
     {
       configurable: { thread_id: conversation.thread_id },
@@ -112,7 +151,7 @@ export async function runAgentTurn(conversationId: string): Promise<void> {
   // background fire-and-forget
   void maybeUpdateProfile({
     profile,
-    customerText: lastCustomerMessage.content ?? '',
+    customerText: customerTextForProfile,
     agentText: text,
   });
 }
