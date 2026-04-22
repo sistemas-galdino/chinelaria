@@ -1,0 +1,71 @@
+{
+  "name": "Magazord - Detalhes Produto",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "codigoProduto",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "trigger-detalhes",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto/{{ $json.codigoProduto }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-detalhes",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nif (data.status === 'success' && data.data) {\n  const p = data.data;\n  const info = p.produtoLoja?.[0] || {};\n  const descHtml = info.descricao || '';\n  const descClean = descHtml.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim().substring(0, 500);\n  \n  return [{ json: {\n    nome: p.nome,\n    modelo: p.modelo,\n    codigo: p.codigo,\n    marca_id: p.marca,\n    titulo: info.titulo,\n    complemento: info.tituloComplemento,\n    descricao: descClean,\n    acompanha: p.acompanha,\n    ativo: p.ativo,\n    palavras_chave: (p.palavraChave || '').substring(0, 200)\n  } }];\n}\n\nreturn [{ json: { erro: 'Produto não encontrado', dados: data } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "format-detalhes",
+      "name": "Formatar Resposta"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Formatar Resposta", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}

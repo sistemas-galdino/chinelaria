@@ -1,0 +1,108 @@
+{
+  "name": "Magazord - Buscar Com Estoque",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "tipo", "type": "string" },
+            { "name": "tamanho", "type": "string" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "trigger-buscar-estoque",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v3/produtos/query?limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ filters: [{ field: 'nomeDerivacao', operator: 'like', value: ($json.tipo + ' ' + $json.tamanho).trim() }] }) }}",
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-query",
+      "name": "Query Derivacoes"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrai lista única de produtos pai dos matches da busca.\n// A tool recebe tipo+tamanho e a busca trouxe derivações que matcham esse termo.\n// Para cada pai único, vamos consultar estoque real.\n\nconst input = $input.first().json;\nconst tipo = $('When Executed by Another Workflow').first().json.tipo || '';\nconst tamanho = $('When Executed by Another Workflow').first().json.tamanho || '';\n\nconst items = input.items || [];\n\nif (items.length === 0) {\n  // Retorna um marcador para o próximo nó saber que não há o que consultar.\n  return [{ json: { _vazio: true, tipo, tamanho } }];\n}\n\n// Agrupa por codigoProduto, guardando o primeiro nome/marca encontrado\nconst pais = {};\nfor (const it of items) {\n  const codigo = it.codigoProduto;\n  if (!codigo) continue;\n  if (!pais[codigo]) {\n    pais[codigo] = {\n      codigoPai: String(codigo),\n      nome: it.nomeProduto || '',\n      marca: it.nomeMarca || '',\n      tipo,\n      tamanho\n    };\n  }\n}\n\n// Emite um item por pai único para o HTTP Request seguinte iterar\nreturn Object.values(pais).map(p => ({ json: p }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "extrair-pais",
+      "name": "Extrair Pais Unicos"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listEstoque?produtoPai={{ $json.codigoPai }}&ativo=true&limit=100",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 0],
+      "id": "http-estoque-por-pai",
+      "name": "Estoque por Pai"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recebe N itens, um por pai, cada um com estoque completo desse pai.\n// Filtra derivações no tamanho pedido com quantidadeDisponivelVenda > 0.\n// Gera: (1) link específico por produto, (2) link de categoria filtrada pelo tamanho.\n\nconst trigger = $('When Executed by Another Workflow').first().json;\nconst tipo = (trigger.tipo || '').toLowerCase().trim();\nconst tamanho = String(trigger.tamanho || '').trim();\n\n// Mapa tamanho → derivacaoItemId (usado no filtro ?derivacao=X do site)\nconst TAMANHO_ID = {\n  '15': 167, '16': 170, '17': 171, '17/18': 110, '18': 172, '19': 109,\n  '20': 111, '20/21': 153, '21': 108, '22': 112, '23': 173, '23/24': 81,\n  '24': 174, '25': 151, '25/26': 80, '26': 176, '26/27': 152, '27': 175,\n  '28': 157, '29': 155, '29/30': 82, '30': 156, '31': 159, '32': 158,\n  '32/33': 204, '33': 131, '33/34': 78, '34': 134, '35': 132, '35/36': 87,\n  '36': 137, '37': 136, '37/38': 86, '38': 138, '39/40': 89, '41': 161,\n  '41/42': 88, '42': 160, '43/44': 114, '44/45': 274, '45/46': 116,\n  '46/47': 208, '47/48': 128, 'UN': 84, 'und': 3698\n};\n\n// Mapa de tipo → path da categoria no site\nconst TIPO_PATH = {\n  'sandalia': 'sandalia', 'sandália': 'sandalia',\n  'chinelo': 'chinelo',\n  'tenis': 'tenis-feminino', 'tênis': 'tenis-feminino',\n  'bota': 'bota', 'sapatilha': 'sapatilha',\n  'tamanco': 'tamanco', 'papete': 'papete',\n  'rasteirinha': 'rasteirinha'\n};\n\nfunction pathDoTipo(t) {\n  const tl = t.toLowerCase();\n  for (const k of Object.keys(TIPO_PATH)) {\n    if (tl.includes(k)) return TIPO_PATH[k];\n  }\n  return ''; // cai na raiz do site\n}\n\nfunction makeSlug(nomeDerivacao) {\n  let s = nomeDerivacao.replace(/\\s+(\\d+(\\/\\d+)?(\\s+un)?|un)\\)\\s*$/i, ')');\n  s = s.replace(/[()]/g, ' ');\n  s = s.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n  s = s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');\n  return s;\n}\n\nfunction extrairCor(desc) {\n  const parte = desc.split(' - ').slice(1).join(' - ') || desc;\n  const m = parte.match(/\\(([^)]+)\\)/);\n  if (!m) return '';\n  let cor = m[1];\n  cor = cor.replace(/\\s+\\d+(\\/\\d+)?(\\s+un)?\\s*$/i, '').replace(/\\s+un\\s*$/i, '');\n  cor = cor.replace(/^\\d+\\s+/, '').trim();\n  return cor;\n}\n\nfunction matchTamanho(desc, tam) {\n  const esc = tam.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  const re = new RegExp(`(\\\\s|\\\\()${esc}(\\\\s+un)?\\\\s*\\\\)`);\n  return re.test(desc);\n}\n\n// Monta link de categoria filtrada pelo tamanho\nfunction linkCategoriaFiltrada(tipoInput, tam) {\n  const path = pathDoTipo(tipoInput);\n  const base = 'https://www.chinelarialeilaneneves.com.br/' + path;\n  const id = TAMANHO_ID[tam];\n  if (!id) return base;\n  return `${base}?derivacao=${id}`;\n}\n\nconst items = $input.all();\nconst grupos = {};\n\nfor (const it of items) {\n  const payload = it.json;\n  if (payload._vazio) continue;\n\n  const estoqueData = Array.isArray(payload.data) ? payload.data : [];\n  if (estoqueData.length === 0) continue;\n\n  const primeiroDesc = estoqueData[0].descricaoProduto || '';\n  const nomePai = primeiroDesc.split(' - ')[0] || '';\n\n  for (const e of estoqueData) {\n    const qtd = e.quantidadeDisponivelVenda || 0;\n    const desc = e.descricaoProduto || '';\n    if (qtd <= 0) continue;\n    if (!matchTamanho(desc, tamanho)) continue;\n\n    const nomeDerivacao = desc.split(' - ').slice(1).join(' - ') || desc;\n    const slug = makeSlug(nomeDerivacao);\n    const link = `https://www.chinelarialeilaneneves.com.br/${slug}`;\n\n    const cor = extrairCor(desc);\n    const chave = `${nomePai}|${cor}`;\n    if (!grupos[chave]) {\n      grupos[chave] = { nome: nomePai, cor, quantidade: qtd, sku: e.produto, link };\n    } else {\n      grupos[chave].quantidade += qtd;\n    }\n  }\n}\n\nconst resultado = Object.values(grupos).slice(0, 10);\nconst linkFiltrado = linkCategoriaFiltrada(tipo, tamanho);\n\nif (resultado.length === 0) {\n  return [{\n    json: {\n      encontrados: 0,\n      tamanho,\n      link_filtrado: linkFiltrado,\n      mensagem: `Nenhum produto encontrado no tamanho ${tamanho} com estoque no momento.`\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    encontrados: resultado.length,\n    tamanho,\n    link_filtrado: linkFiltrado,\n    produtos: resultado\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 0],
+      "id": "filtrar-formatar",
+      "name": "Filtrar e Formatar"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "Query Derivacoes", "type": "main", "index": 0 }]]
+    },
+    "Query Derivacoes": {
+      "main": [[{ "node": "Extrair Pais Unicos", "type": "main", "index": 0 }]]
+    },
+    "Extrair Pais Unicos": {
+      "main": [[{ "node": "Estoque por Pai", "type": "main", "index": 0 }]]
+    },
+    "Estoque por Pai": {
+      "main": [[{ "node": "Filtrar e Formatar", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}

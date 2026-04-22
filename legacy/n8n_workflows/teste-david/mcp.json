@@ -1,0 +1,293 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "path": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+            },
+            "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+            "typeVersion": 2,
+            "position": [
+                -48,
+                -64
+            ],
+            "id": "cc8dfb92-73e6-4f53-a542-93e5ccf44576",
+            "name": "MCP Server Trigger1",
+            "webhookId": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+        },
+        {
+            "parameters": {
+                "description": "Busca produtos no catalogo da Chinelaria Leilane Neves por nome ou palavra-chave. Use quando o cliente perguntar sobre um produto, marca ou tipo de calcado. Retorna nome, codigo, marca e status.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "BJhAlYBHyd5RQpc8",
+                    "mode": "list",
+                    "cachedResultUrl": "/workflow/BJhAlYBHyd5RQpc8",
+                    "cachedResultName": "Magazord - Buscar Produtos"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "nome": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nome', ``, 'string') }}"
+                    },
+                    "matchingColumns": [
+                        "nome"
+                    ],
+                    "schema": [
+                        {
+                            "id": "nome",
+                            "displayName": "nome",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -352,
+                144
+            ],
+            "id": "11e5931d-1f26-4e13-969a-6f028cff1a6a",
+            "name": "BuscarProdutos"
+        },
+        {
+            "parameters": {
+                "description": "Consulta o estoque em tempo real de um produto. Use para verificar quais tamanhos e cores estao disponiveis. O parametro produtoPai e o codigo SKU retornado pela busca.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "CAQvaRd5yXkzVZ3e",
+                    "mode": "list",
+                    "cachedResultUrl": "/workflow/CAQvaRd5yXkzVZ3e",
+                    "cachedResultName": "Magazord - Consultar Estoque"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "produtoPai": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', ``, 'string') }}"
+                    },
+                    "matchingColumns": [
+                        "produtoPai"
+                    ],
+                    "schema": [
+                        {
+                            "id": "produtoPai",
+                            "displayName": "produtoPai",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string"
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                -176,
+                144
+            ],
+            "id": "1b029c59-bd26-4709-a5ae-f3c8741414a0",
+            "name": "ConsultarEstoque"
+        },
+        {
+            "parameters": {
+                "description": "Consulta precos de um produto. Use quando o cliente perguntar quanto custa. O parametro produtoPai e o codigo SKU retornado pela busca.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "hQjmtRLpLi8sy8Dg",
+                    "mode": "list",
+                    "cachedResultUrl": "/workflow/hQjmtRLpLi8sy8Dg",
+                    "cachedResultName": "Magazord - Consultar Preco"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "produtoPai": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', ``, 'string') }}"
+                    },
+                    "matchingColumns": [
+                        "produtoPai"
+                    ],
+                    "schema": [
+                        {
+                            "id": "produtoPai",
+                            "displayName": "produtoPai",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                16,
+                144
+            ],
+            "id": "3df3f228-a51f-4cfd-b9a5-96110bda5ad1",
+            "name": "ConsultarPreco"
+        },
+        {
+            "parameters": {
+                "description": "Busca detalhes completos de um produto: descricao, modelo, derivacoes. Use para dar informacoes detalhadas ao cliente. O parametro codigoProduto e o codigo SKU do produto pai.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "u2PEkzU5Linrl49X",
+                    "mode": "list",
+                    "cachedResultUrl": "/workflow/u2PEkzU5Linrl49X",
+                    "cachedResultName": "Magazord - Detalhes Produto"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "codigoProduto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('codigoProduto', ``, 'string') }}"
+                    },
+                    "matchingColumns": [
+                        "codigoProduto"
+                    ],
+                    "schema": [
+                        {
+                            "id": "codigoProduto",
+                            "displayName": "codigoProduto",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                192,
+                144
+            ],
+            "id": "b0d24eae-2757-4d42-a982-89def111be3d",
+            "name": "DetalhesProduto"
+        },
+        {
+            "parameters": {
+                "description": "Busca avancada por nome de derivacao (inclui cor e tamanho). Use para buscas especificas como havaianas azul 37 ou molekinha preto 25.",
+                "workflowId": {
+                    "__rl": true,
+                    "value": "volGOaYDYG1wnNCA",
+                    "mode": "list",
+                    "cachedResultUrl": "/workflow/volGOaYDYG1wnNCA",
+                    "cachedResultName": "Magazord - Busca Avancada"
+                },
+                "workflowInputs": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "termo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('termo', ``, 'string') }}"
+                    },
+                    "matchingColumns": [
+                        "termo"
+                    ],
+                    "schema": [
+                        {
+                            "id": "termo",
+                            "displayName": "termo",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "canBeUsedToMatch": true,
+                            "type": "string",
+                            "removed": false
+                        }
+                    ],
+                    "attemptToConvertTypes": false,
+                    "convertFieldsToString": false
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+            "typeVersion": 2.2,
+            "position": [
+                368,
+                144
+            ],
+            "id": "7c7a1b53-a52f-4747-8476-fce3c8a3c31f",
+            "name": "BuscaAvancada"
+        }
+    ],
+    "connections": {
+        "BuscarProdutos": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ConsultarEstoque": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ConsultarPreco": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DetalhesProduto": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "BuscaAvancada": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "f7283213f5bd43f486bac74e0e7d5dc62df8cbd28ff61aa31e849bd6056ffc1f"
+    }
+}

@@ -1,0 +1,12 @@
+Pessoal, boa tarde!
+
+Estamos na terceira reunião falando sobre agente de IA do CRM e ainda não conseguimos utilizar a ferramenta da forma correta, especificamente nessa parte da Agente de IA, no envio de links do nosso site pelo WhatsApp.
+Tivemos reuniões com o Léo e com o Isao, ambos contribuíram, porém ficou a impressão de que essa demanda está sendo redirecionada entre áreas e ainda não tivemos uma solução prática. Como já estamos entrando em março e fizemos um investimento alto para utilizar a ferramenta de forma completa, precisamos de um direcionamento claro e definitivo.
+Já informamos vocês que nossa API é aberta, mas essa etapa depende de desenvolvimento técnico. Por isso, precisamos saber:
+
+* quem é o responsável direto por essa implementação
+* qual o caminho correto para solução
+* ⁠e um prazo real para funcionamento
+
+Não faz sentido continuarmos marcando reuniões sem evolução prática. Precisamos de uma resolução para que possamos operar a ferramenta como planejado.
+Contamos com a ajuda de vocês para avançarmos com essa etapa o quanto antes. Obrigada!

@@ -1,0 +1,92 @@
+{
+  "name": "Magazord - Consultar Preco",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "produtoPai",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "trigger-preco",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listPreco",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tabelaPreco",
+              "value": "1"
+            },
+            {
+              "name": "produtoPai",
+              "value": "={{ $json.produtoPai }}"
+            },
+            {
+              "name": "ativo",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-preco",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nif (data.data && Array.isArray(data.data)) {\n  const precos = data.data.map(item => ({\n    produto: item.produtoNome,\n    sku: item.produto,\n    preco_venda: item.precoVenda,\n    preco_antigo: item.precoAntigo,\n    desconto: item.percentualDesconto\n  }));\n  return [{ json: { total: precos.length, precos } }];\n}\n\nreturn [{ json: { erro: 'Não foi possível consultar preços', dados: data } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "format-preco",
+      "name": "Formatar Resposta"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Formatar Resposta", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}

@@ -1,0 +1,258 @@
+{
+    "nodes": [
+        {
+            "parameters": {
+                "toolDescription": "Busca produtos no catálogo da Chinelaria Leilane Neves por nome ou palavra-chave. Use quando o cliente perguntar sobre um produto, marca ou tipo de calçado. Retorna nome, código, marca e status dos produtos encontrados.",
+                "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpBasicAuth",
+                "sendQuery": true,
+                "parametersQuery": {
+                    "values": [
+                        {
+                            "name": "nome"
+                        },
+                        {
+                            "name": "limit",
+                            "valueProvider": "fieldValue",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "optimizeResponse": true
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+            "typeVersion": 1.1,
+            "position": [
+                -240,
+                192
+            ],
+            "id": "031284c6-7345-4393-b804-c3685bc974c0",
+            "name": "Buscar Produtos",
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "mAQJ0iUacEBVGCo4",
+                    "name": "API Megazord - Chinelaria"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "toolDescription": "Consulta o estoque em tempo real de um produto específico. Use após buscar um produto para verificar quais tamanhos e cores estão disponíveis e a quantidade em estoque. O parâmetro produtoPai é o código do produto retornado pela busca de produtos.",
+                "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listEstoque",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpBasicAuth",
+                "sendQuery": true,
+                "parametersQuery": {
+                    "values": [
+                        {
+                            "name": "produtoPai"
+                        },
+                        {
+                            "name": "ativo",
+                            "valueProvider": "fieldValue",
+                            "value": "true"
+                        },
+                        {
+                            "name": "limit",
+                            "valueProvider": "fieldValue",
+                            "value": "10"
+                        }
+                    ]
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+            "typeVersion": 1.1,
+            "position": [
+                -80,
+                192
+            ],
+            "id": "2396eb42-0a52-4603-b4db-0e27e0aea7ba",
+            "name": "Consultar Estoque",
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "mAQJ0iUacEBVGCo4",
+                    "name": "API Megazord - Chinelaria"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "toolDescription": "Consulta os preços de um produto. Use quando o cliente perguntar quanto custa um produto. O parâmetro produtoPai é o código do produto retornado pela busca. Retorna preço de venda e preço antigo (se houver desconto).",
+                "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listPreco",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpBasicAuth",
+                "sendQuery": true,
+                "parametersQuery": {
+                    "values": [
+                        {
+                            "name": "tabelaPreco",
+                            "valueProvider": "fieldValue",
+                            "value": "1"
+                        },
+                        {
+                            "name": "produtoPai"
+                        },
+                        {
+                            "name": "ativo",
+                            "valueProvider": "fieldValue",
+                            "value": "1"
+                        },
+                        {
+                            "name": "limit",
+                            "valueProvider": "fieldValue",
+                            "value": "100"
+                        }
+                    ]
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+            "typeVersion": 1.1,
+            "position": [
+                96,
+                192
+            ],
+            "id": "e5d75918-888f-46b6-9be8-190d2f600626",
+            "name": "Consultar Preço",
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "mAQJ0iUacEBVGCo4",
+                    "name": "API Megazord - Chinelaria"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "toolDescription": "Busca detalhes completos de um produto específico: descrição, modelo, derivações (cores e tamanhos), categorias e palavras-chave. Use para dar informações detalhadas sobre um produto ao cliente. O parâmetro codigoProduto é o código SKU do produto pai.",
+                "url": "=https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto/{{ /*n8n-auto-generated-fromAI-override*/ $fromAI('codigoProduto', 'Código do produto pai (SKU) para buscar detalhes', 'string') }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpBasicAuth"
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+            "typeVersion": 1.1,
+            "position": [
+                256,
+                192
+            ],
+            "id": "0023bf28-2ed8-4d2f-91fa-8b6741ae4828",
+            "name": "Detalhes do Produto",
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "mAQJ0iUacEBVGCo4",
+                    "name": "API Megazord - Chinelaria"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "toolDescription": "Busca avançada de produtos com filtro por nome da derivação (inclui cor e tamanho no nome). Use para buscas mais específicas como 'havaianas azul 37' ou 'molekinha preto'. Retorna produtos com nome, marca, código e EAN.",
+                "method": "POST",
+                "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v3/produtos/query",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpBasicAuth",
+                "sendQuery": true,
+                "parametersQuery": {
+                    "values": [
+                        {
+                            "name": "limit",
+                            "valueProvider": "fieldValue",
+                            "value": "15"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ filters: [{ field: 'nomeDerivacao', operator: 'like', value: $fromAI('termo', 'Termo de busca para encontrar produtos específicos (ex: havaianas azul, molekinha preto 25)', 'string') }] }) }}"
+            },
+            "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+            "typeVersion": 1.1,
+            "position": [
+                416,
+                192
+            ],
+            "id": "7408e11c-b825-4ea8-a277-74065af0703c",
+            "name": "Busca Avançada",
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "mAQJ0iUacEBVGCo4",
+                    "name": "API Megazord - Chinelaria"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "path": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+            },
+            "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+            "typeVersion": 2,
+            "position": [
+                -16,
+                -16
+            ],
+            "id": "04708478-8f37-4446-85b9-6b2ea5194a01",
+            "name": "MCP Server Trigger1",
+            "webhookId": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+        }
+    ],
+    "connections": {
+        "Buscar Produtos": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar Estoque": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Consultar Preço": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Detalhes do Produto": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Busca Avançada": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "MCP Server Trigger1",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "f7283213f5bd43f486bac74e0e7d5dc62df8cbd28ff61aa31e849bd6056ffc1f"
+    }
+}

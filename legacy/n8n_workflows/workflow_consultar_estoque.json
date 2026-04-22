@@ -1,0 +1,88 @@
+{
+  "name": "Magazord - Consultar Estoque",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "produtoPai",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "trigger-estoque",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listEstoque",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "produtoPai",
+              "value": "={{ $json.produtoPai }}"
+            },
+            {
+              "name": "ativo",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-estoque",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nfunction makeSlug(nome) {\n  const semTam = nome.replace(/\\s+(\\d+(\\/\\d+)?(\\s+un)?|un)\\)\\s*$/, ')').replace(/[()]/g, ' ');\n  return semTam\n    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-|-$/g, '');\n}\n\nif (data.data && Array.isArray(data.data)) {\n  const comEstoque = data.data\n    .filter(item => item.quantidadeDisponivelVenda > 0)\n    .map(item => {\n      const derivNome = item.descricaoProduto.split(' - ').pop() || item.descricaoProduto;\n      const slug = makeSlug(derivNome);\n      return {\n        descricao: item.descricaoProduto,\n        quantidade: item.quantidadeDisponivelVenda,\n        sku: item.produto,\n        link: 'https://www.chinelarialeilaneneves.com.br/' + slug\n      };\n    });\n  const semEstoque = data.data.filter(item => item.quantidadeDisponivelVenda === 0).length;\n  return [{ json: { com_estoque: comEstoque.length, sem_estoque: semEstoque, itens: comEstoque } }];\n}\n\nreturn [{ json: { erro: 'Nao foi possivel consultar estoque' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "format-estoque",
+      "name": "Formatar Resposta"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Formatar Resposta", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}

@@ -1,0 +1,207 @@
+{
+  "name": "MCP - Chinelaria Magazord",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "mcp-trigger",
+      "name": "MCP Server Trigger1",
+      "webhookId": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+    },
+    {
+      "parameters": {
+        "description": "Busca produtos no catálogo da Chinelaria Leilane Neves por nome ou palavra-chave. Use quando o cliente perguntar sobre um produto, marca ou tipo de calçado. Retorna nome, código, marca e status.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Magazord - Buscar Produtos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nome": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nome', 'Nome ou palavra-chave do produto (ex: havaianas, sandalia, chinelo feminino)', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [280, 200],
+      "id": "tool-buscar",
+      "name": "Buscar Produtos"
+    },
+    {
+      "parameters": {
+        "description": "Consulta o estoque em tempo real de um produto. Use para verificar quais tamanhos e cores estão disponíveis. O parâmetro produtoPai é o código SKU retornado pela busca.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Magazord - Consultar Estoque"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "produtoPai": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', 'Código SKU do produto pai retornado pela busca', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "produtoPai",
+              "displayName": "produtoPai",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [460, 200],
+      "id": "tool-estoque",
+      "name": "Consultar Estoque"
+    },
+    {
+      "parameters": {
+        "description": "Consulta preços de um produto. Use quando o cliente perguntar quanto custa. O parâmetro produtoPai é o código SKU retornado pela busca.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Magazord - Consultar Preco"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "produtoPai": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', 'Código SKU do produto pai para consultar preço', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "produtoPai",
+              "displayName": "produtoPai",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [640, 200],
+      "id": "tool-preco",
+      "name": "Consultar Preco"
+    },
+    {
+      "parameters": {
+        "description": "Busca detalhes completos de um produto: descrição, modelo, derivações. Use para dar informações detalhadas ao cliente. O parâmetro codigoProduto é o código SKU do produto pai.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Magazord - Detalhes Produto"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "codigoProduto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('codigoProduto', 'Código SKU do produto pai para buscar detalhes', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "codigoProduto",
+              "displayName": "codigoProduto",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [820, 200],
+      "id": "tool-detalhes",
+      "name": "Detalhes Produto"
+    },
+    {
+      "parameters": {
+        "description": "Busca avançada por nome de derivação (inclui cor e tamanho). Use para buscas específicas como 'havaianas azul 37' ou 'molekinha preto 25'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "Magazord - Busca Avancada"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "termo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('termo', 'Termo de busca com cor e/ou tamanho (ex: havaianas azul 37)', 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "termo",
+              "displayName": "termo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [1000, 200],
+      "id": "tool-avancada",
+      "name": "Busca Avancada"
+    }
+  ],
+  "connections": {
+    "Buscar Produtos": {
+      "ai_tool": [[{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]]
+    },
+    "Consultar Estoque": {
+      "ai_tool": [[{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]]
+    },
+    "Consultar Preco": {
+      "ai_tool": [[{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]]
+    },
+    "Detalhes Produto": {
+      "ai_tool": [[{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]]
+    },
+    "Busca Avancada": {
+      "ai_tool": [[{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}

@@ -1,0 +1,112 @@
+{
+  "name": "MCP - Chinelaria Magazord",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "mcp-trigger",
+      "name": "MCP Server Trigger1",
+      "webhookId": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+    },
+    {
+      "parameters": {
+        "name": "Buscar_Produtos",
+        "description": "Busca produtos no catálogo da Chinelaria Leilane Neves por nome ou palavra-chave. Use quando o cliente perguntar sobre um produto, marca ou tipo de calçado. Retorna nome, código, marca e status dos produtos encontrados. O parâmetro 'nome' é o termo de busca (ex: havaianas, sandalia, chinelo feminino).",
+        "code": "const nome = $input.first().json.input?.nome || $input.first().json.nome || '';\nconst url = 'https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto';\nconst auth = Buffer.from('MZDKc9317ea99f7807c12d38f598bd271aee5cc82c80abe23c3c95ae5465104c:u@DlO9bYoZ7$').toString('base64');\n\nconst response = await fetch(`${url}?nome=${encodeURIComponent(nome)}&limit=10`, {\n  headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }\n});\nconst data = await response.json();\n\nif (data.status === 'success' && data.data?.items) {\n  const produtos = data.data.items.map(p => ({\n    nome: p.nome,\n    codigo: p.codigo,\n    marca_id: p.marca,\n    ativo: p.ativo,\n    derivacoes: (p.derivacoes || []).filter(d => typeof d === 'object').map(d => d.nome).slice(0, 5)\n  }));\n  return JSON.stringify({ total: data.data.items.length, produtos });\n}\nreturn JSON.stringify({ erro: 'Nenhum produto encontrado', resposta: data });",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"nome\": {\n      \"type\": \"string\",\n      \"description\": \"Nome ou palavra-chave do produto a buscar (ex: havaianas, sandalia, chinelo)\"\n    }\n  },\n  \"required\": [\"nome\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 2,
+      "position": [280, 200],
+      "id": "tool-buscar",
+      "name": "Buscar Produtos"
+    },
+    {
+      "parameters": {
+        "name": "Consultar_Estoque",
+        "description": "Consulta o estoque em tempo real de um produto. Use após buscar um produto para verificar quais tamanhos e cores estão disponíveis e a quantidade em estoque. O parâmetro 'produtoPai' é o código SKU do produto retornado pela busca de produtos.",
+        "code": "const produtoPai = $input.first().json.input?.produtoPai || $input.first().json.produtoPai || '';\nconst url = 'https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listEstoque';\nconst auth = Buffer.from('MZDKc9317ea99f7807c12d38f598bd271aee5cc82c80abe23c3c95ae5465104c:u@DlO9bYoZ7$').toString('base64');\n\nconst response = await fetch(`${url}?produtoPai=${encodeURIComponent(produtoPai)}&ativo=true&limit=100`, {\n  headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }\n});\nconst data = await response.json();\n\nif (data.data && Array.isArray(data.data)) {\n  const estoque = data.data\n    .filter(item => item.quantidadeDisponivelVenda > 0)\n    .map(item => ({\n      descricao: item.descricaoProduto,\n      quantidade: item.quantidadeDisponivelVenda,\n      sku: item.produto\n    }));\n  const semEstoque = data.data.filter(item => item.quantidadeDisponivelVenda === 0).length;\n  return JSON.stringify({ com_estoque: estoque.length, sem_estoque: semEstoque, itens: estoque });\n}\nreturn JSON.stringify({ erro: 'Não foi possível consultar estoque', resposta: data });",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"produtoPai\": {\n      \"type\": \"string\",\n      \"description\": \"Código SKU do produto pai retornado pela busca de produtos\"\n    }\n  },\n  \"required\": [\"produtoPai\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 2,
+      "position": [460, 200],
+      "id": "tool-estoque",
+      "name": "Consultar Estoque"
+    },
+    {
+      "parameters": {
+        "name": "Consultar_Preco",
+        "description": "Consulta os preços de um produto. Use quando o cliente perguntar quanto custa. O parâmetro 'produtoPai' é o código SKU do produto retornado pela busca. Retorna preço de venda e preço antigo se houver desconto.",
+        "code": "const produtoPai = $input.first().json.input?.produtoPai || $input.first().json.produtoPai || '';\nconst url = 'https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listPreco';\nconst auth = Buffer.from('MZDKc9317ea99f7807c12d38f598bd271aee5cc82c80abe23c3c95ae5465104c:u@DlO9bYoZ7$').toString('base64');\n\nconst response = await fetch(`${url}?tabelaPreco=1&produtoPai=${encodeURIComponent(produtoPai)}&ativo=1&limit=100`, {\n  headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }\n});\nconst data = await response.json();\n\nif (data.data && Array.isArray(data.data)) {\n  const precos = data.data.map(item => ({\n    produto: item.produtoNome,\n    sku: item.produto,\n    preco_venda: item.precoVenda,\n    preco_antigo: item.precoAntigo,\n    desconto: item.percentualDesconto\n  }));\n  return JSON.stringify({ total: precos.length, precos });\n}\nreturn JSON.stringify({ erro: 'Não foi possível consultar preços', resposta: data });",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"produtoPai\": {\n      \"type\": \"string\",\n      \"description\": \"Código SKU do produto pai para consultar preço\"\n    }\n  },\n  \"required\": [\"produtoPai\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 2,
+      "position": [640, 200],
+      "id": "tool-preco",
+      "name": "Consultar Preco"
+    },
+    {
+      "parameters": {
+        "name": "Detalhes_Produto",
+        "description": "Busca detalhes completos de um produto: descrição, modelo, derivações (cores e tamanhos), categorias. Use para dar informações detalhadas ao cliente. O parâmetro 'codigoProduto' é o código SKU do produto pai.",
+        "code": "const codigoProduto = $input.first().json.input?.codigoProduto || $input.first().json.codigoProduto || '';\nconst url = `https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto/${encodeURIComponent(codigoProduto)}`;\nconst auth = Buffer.from('MZDKc9317ea99f7807c12d38f598bd271aee5cc82c80abe23c3c95ae5465104c:u@DlO9bYoZ7$').toString('base64');\n\nconst response = await fetch(url, {\n  headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' }\n});\nconst data = await response.json();\n\nif (data.status === 'success' && data.data) {\n  const p = data.data;\n  const info = p.produtoLoja?.[0] || {};\n  const descHtml = info.descricao || '';\n  const descClean = descHtml.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim().substring(0, 500);\n  return JSON.stringify({\n    nome: p.nome,\n    modelo: p.modelo,\n    codigo: p.codigo,\n    marca_id: p.marca,\n    titulo: info.titulo,\n    complemento: info.tituloComplemento,\n    descricao: descClean,\n    acompanha: p.acompanha,\n    ativo: p.ativo,\n    link_site: `https://www.chinelarialeilaneneves.com.br/${info.titulo ? info.titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-') : codigoProduto}`\n  });\n}\nreturn JSON.stringify({ erro: 'Produto não encontrado', resposta: data });",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"codigoProduto\": {\n      \"type\": \"string\",\n      \"description\": \"Código SKU do produto pai para buscar detalhes\"\n    }\n  },\n  \"required\": [\"codigoProduto\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 2,
+      "position": [820, 200],
+      "id": "tool-detalhes",
+      "name": "Detalhes Produto"
+    },
+    {
+      "parameters": {
+        "name": "Busca_Avancada",
+        "description": "Busca avançada de produtos por nome de derivação (inclui cor e tamanho). Use para buscas específicas como 'havaianas azul 37' ou 'molekinha preto 25'. Retorna produtos com nome, marca, código e tamanho.",
+        "code": "const termo = $input.first().json.input?.termo || $input.first().json.termo || '';\nconst url = 'https://chinelarialeilaneneves.painel.magazord.com.br/api/v3/produtos/query?limit=15';\nconst auth = Buffer.from('MZDKc9317ea99f7807c12d38f598bd271aee5cc82c80abe23c3c95ae5465104c:u@DlO9bYoZ7$').toString('base64');\n\nconst response = await fetch(url, {\n  method: 'POST',\n  headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },\n  body: JSON.stringify({ filters: [{ field: 'nomeDerivacao', operator: 'like', value: termo }] })\n});\nconst data = await response.json();\n\nif (data.items && Array.isArray(data.items)) {\n  const produtos = data.items.map(item => ({\n    nome: item.nomeProduto,\n    derivacao: item.nomeDerivacao,\n    codigo: item.codigoProduto,\n    sku: item.derivacaoCodigo,\n    marca: item.nomeMarca,\n    ativo: item.ativo\n  }));\n  return JSON.stringify({ total: data.total, encontrados: produtos.length, produtos });\n}\nreturn JSON.stringify({ erro: 'Nenhum produto encontrado', resposta: data });",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"termo\": {\n      \"type\": \"string\",\n      \"description\": \"Termo de busca específico incluindo cor e/ou tamanho (ex: havaianas azul 37, molekinha preto 25)\"\n    }\n  },\n  \"required\": [\"termo\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 2,
+      "position": [1000, 200],
+      "id": "tool-busca-avancada",
+      "name": "Busca Avancada"
+    }
+  ],
+  "connections": {
+    "Buscar Produtos": {
+      "ai_tool": [
+        [{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Consultar Estoque": {
+      "ai_tool": [
+        [{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Consultar Preco": {
+      "ai_tool": [
+        [{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Detalhes Produto": {
+      "ai_tool": [
+        [{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]
+      ]
+    },
+    "Busca Avancada": {
+      "ai_tool": [
+        [{ "node": "MCP Server Trigger1", "type": "ai_tool", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "f7283213f5bd43f486bac74e0e7d5dc62df8cbd28ff61aa31e849bd6056ffc1f"
+  }
+}

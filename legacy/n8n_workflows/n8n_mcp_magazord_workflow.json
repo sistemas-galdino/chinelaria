@@ -1,0 +1,251 @@
+{
+  "name": "MCP - Chinelaria Magazord",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "68e509f9-74f8-497d-a6d9-275c29bb0a01",
+        "authentication": "none"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [600, 340],
+      "id": "mcp-trigger-001",
+      "name": "MCP Server Trigger",
+      "webhookId": "68e509f9-74f8-497d-a6d9-275c29bb0a01"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca produtos no catálogo da Chinelaria Leilane Neves por nome ou palavra-chave. Use quando o cliente perguntar sobre um produto, marca ou tipo de calçado. Retorna nome, código, marca e status dos produtos encontrados.",
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "nome",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nome', 'Nome ou palavra-chave do produto a buscar (ex: havaianas, sandalia, chinelo)', 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [380, 540],
+      "id": "tool-buscar-produtos",
+      "name": "Buscar Produtos",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "magazord-api-auth",
+          "name": "Magazord API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta o estoque em tempo real de um produto específico. Use após buscar um produto para verificar quais tamanhos e cores estão disponíveis e a quantidade em estoque. O parâmetro produtoPai é o código do produto retornado pela busca de produtos.",
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listEstoque",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "produtoPai",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', 'Código do produto pai (SKU) retornado pela busca de produtos', 'string') }}"
+            },
+            {
+              "name": "ativo",
+              "value": "true"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [540, 540],
+      "id": "tool-consultar-estoque",
+      "name": "Consultar Estoque",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "magazord-api-auth",
+          "name": "Magazord API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta os preços de um produto. Use quando o cliente perguntar quanto custa um produto. O parâmetro produtoPai é o código do produto retornado pela busca. Retorna preço de venda e preço antigo (se houver desconto).",
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v1/listPreco",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tabelaPreco",
+              "value": "1"
+            },
+            {
+              "name": "produtoPai",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('produtoPai', 'Código do produto pai (SKU) para consultar o preço', 'string') }}"
+            },
+            {
+              "name": "ativo",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [700, 540],
+      "id": "tool-consultar-preco",
+      "name": "Consultar Preço",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "magazord-api-auth",
+          "name": "Magazord API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca detalhes completos de um produto específico: descrição, modelo, derivações (cores e tamanhos), categorias e palavras-chave. Use para dar informações detalhadas sobre um produto ao cliente. O parâmetro codigoProduto é o código SKU do produto pai.",
+        "method": "GET",
+        "url": "=https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produto/{{ /*n8n-auto-generated-fromAI-override*/ $fromAI('codigoProduto', 'Código do produto pai (SKU) para buscar detalhes', 'string') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [860, 540],
+      "id": "tool-detalhes-produto",
+      "name": "Detalhes do Produto",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "magazord-api-auth",
+          "name": "Magazord API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca avançada de produtos com filtro por nome da derivação (inclui cor e tamanho no nome). Use para buscas mais específicas como 'havaianas azul 37' ou 'molekinha preto'. Retorna produtos com nome, marca, código e EAN.",
+        "method": "POST",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v3/produtos/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ filters: [{ field: 'nomeDerivacao', operator: 'like', value: $fromAI('termo', 'Termo de busca para encontrar produtos específicos (ex: havaianas azul, molekinha preto 25)', 'string') }] }) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1020, 540],
+      "id": "tool-busca-avancada",
+      "name": "Busca Avançada",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "magazord-api-auth",
+          "name": "Magazord API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Buscar Produtos": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Estoque": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Preço": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detalhes do Produto": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Avançada": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

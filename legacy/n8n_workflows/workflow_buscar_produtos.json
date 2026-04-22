@@ -1,0 +1,88 @@
+{
+  "name": "Magazord - Buscar Produtos",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "nome",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "trigger-buscar",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://chinelarialeilaneneves.painel.magazord.com.br/api/v2/site/produtoDerivacoes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic TVpES2M5MzE3ZWE5OWY3ODA3YzEyZDM4ZjU5OGJkMjcxYWVlNWNjODJjODBhYmUyM2MzYzk1YWU1NDY1MTA0Yzp1QERsTzliWW9aNyQ="
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "nome",
+              "value": "={{ $json.nome }}"
+            },
+            {
+              "name": "ativo",
+              "value": "1"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "id": "http-buscar",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nfunction makeSlug(nome) {\n  const semTam = nome.replace(/\\s+(\\d+(\\/\\d+)?(\\s+un)?|un)\\)\\s*$/, ')').replace(/[()]/g, ' ');\n  return semTam\n    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-|-$/g, '');\n}\n\nif (data.status === 'success' && data.data?.items) {\n  const grupos = {};\n  for (const item of data.data.items) {\n    const agrup = item.agrupador || item.codigo;\n    if (!grupos[agrup]) {\n      const slug = makeSlug(item.nome);\n      grupos[agrup] = {\n        nome: item.nomeCompleto ? item.nomeCompleto.split(' - ')[0] : item.nome,\n        codigo_pai: agrup.split('-')[0],\n        tamanhos: [],\n        link: 'https://www.chinelarialeilaneneves.com.br/' + slug\n      };\n    }\n    const tamDeriv = (item.derivacoes || []).find(d => d.derivacao === 2);\n    if (tamDeriv) {\n      grupos[agrup].tamanhos.push(tamDeriv.valor);\n    }\n  }\n  const produtos = Object.values(grupos).map(g => ({\n    ...g,\n    tamanhos: g.tamanhos.join(', ')\n  }));\n  return [{ json: { total: produtos.length, produtos } }];\n}\n\nreturn [{ json: { erro: 'Nenhum produto encontrado' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "format-buscar",
+      "name": "Formatar Resposta"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Formatar Resposta", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {}
+}
