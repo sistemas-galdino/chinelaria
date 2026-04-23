@@ -32,6 +32,16 @@ COPY --from=deps /app/packages/mcp-magazord/node_modules ./packages/mcp-magazord
 COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
+
+# NEXT_PUBLIC_* precisam ser ARG + ENV no stage do build, senão o
+# Next.js não inlina os valores no bundle do browser e o cliente quebra
+# em runtime com "URL and API key are required to create a Supabase client".
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @chinelaria/web build
 
