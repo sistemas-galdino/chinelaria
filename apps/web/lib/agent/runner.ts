@@ -40,6 +40,16 @@ export async function runAgentTurn(conversationId: string): Promise<void> {
     return;
   }
 
+  // Allowlist (testes): se houver números configurados, só responde a esses.
+  const allowedRaw = config.allowed_phones;
+  const allowed = Array.isArray(allowedRaw)
+    ? allowedRaw.filter((v): v is string => typeof v === 'string').map((v) => v.replace(/\D/g, ''))
+    : [];
+  if (allowed.length > 0 && !allowed.includes(profile.phone_number)) {
+    console.log(`[agent] phone ${profile.phone_number} not in allowlist — skipping`);
+    return;
+  }
+
   const lastCustomerMessage = recentMessages.findLast((m) => m.role === 'customer');
   if (!lastCustomerMessage) {
     console.log(`[agent] no customer message in ${conversationId} — skipping`);

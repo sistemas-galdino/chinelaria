@@ -11,11 +11,17 @@ async function saveSettingsAction(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) return;
 
+  const allowedPhones = String(formData.get('allowed_phones') ?? '')
+    .split(',')
+    .map((s) => s.replace(/\D/g, ''))
+    .filter((s) => s.length > 0);
+
   const updates: Array<{ key: string; value: unknown }> = [
     { key: 'agent_enabled', value: formData.get('agent_enabled') === 'on' },
     { key: 'model', value: String(formData.get('model') ?? 'gpt-5') },
-    { key: 'temperature', value: Number(formData.get('temperature') ?? 0.7) },
+    { key: 'temperature', value: Number(formData.get('temperature') ?? 1) },
     { key: 'max_tokens', value: Number(formData.get('max_tokens') ?? 2000) },
+    { key: 'allowed_phones', value: allowedPhones },
   ];
 
   for (const u of updates) {
@@ -85,6 +91,19 @@ export default async function SettingsPage() {
             defaultValue={typeof cfg.max_tokens === 'number' ? cfg.max_tokens : 2000}
             style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14 }}
           />
+        </label>
+
+        <label style={{ display: 'grid', gap: 4, fontSize: 13 }}>
+          Números permitidos (allowlist)
+          <input
+            name="allowed_phones"
+            placeholder="ex: 5511921239343, 5511988887777"
+            defaultValue={Array.isArray(cfg.allowed_phones) ? (cfg.allowed_phones as string[]).join(', ') : ''}
+            style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14 }}
+          />
+          <span style={{ fontSize: 12, color: '#666' }}>
+            Vazio = agente responde a todos. Com valores = só responde aos números listados (E.164 sem +, separados por vírgula). Ideal para testes.
+          </span>
         </label>
 
         <button
