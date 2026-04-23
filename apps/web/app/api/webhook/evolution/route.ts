@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { runAgentTurn } from '@/lib/agent/runner';
 import { ingestInboundMessage, setConversationPaused, recordOutboundMessage } from '@/lib/db/conversations';
 import { normalize } from '@/lib/evolution/normalize';
 import { sendText } from '@/lib/evolution/client';
@@ -79,14 +80,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true, handoff: 'video' });
   }
 
-  // Dispara o agente em background (não awaita — webhook precisa ser rápido).
-  // Fase 4 implementa /api/agent/run; por enquanto é um stub que loga e retorna.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  fetch(`${appUrl}/api/agent/run`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ conversationId: conversation.id }),
-  }).catch((err) => console.error('agent dispatch error', err));
+  // Dispara o agente in-process — fire-and-forget no mesmo Node runtime.
+  // Evita HTTP loopback (que era bloqueado pelo proxy do EasyPanel).
+  console.log(`[webhook] dispatching agent for conversation ${conversation.id}`);
+  void runAgentTurn(conversation.id).catch((err) =>
+    console.error(`[webhook] agent run failed for ${conversation.id}`, err),
+  );
 
   return NextResponse.json({ ok: true, conversationId: conversation.id });
 }

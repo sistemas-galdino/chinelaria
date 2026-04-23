@@ -26,6 +26,7 @@ import { getSupabaseAdminClient } from '../supabase/server.ts';
  *   9. Dispara update-profile em background.
  */
 export async function runAgentTurn(conversationId: string): Promise<void> {
+  console.log(`[agent] runAgentTurn START for ${conversationId}`);
   const config = await loadAgentConfig();
   if (config.agent_enabled === false) {
     console.log(`[agent] globally disabled — skipping ${conversationId}`);
