@@ -27,6 +27,10 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/agent/node_modules ./packages/agent/node_modules
+COPY --from=deps /app/packages/mcp-magazord/node_modules ./packages/mcp-magazord/node_modules
+COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @chinelaria/web build
