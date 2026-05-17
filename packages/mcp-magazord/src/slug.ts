@@ -30,10 +30,14 @@ export function extractCor(desc: string): string {
 
 /**
  * Verifica se uma `descricaoProduto` corresponde ao tamanho informado.
- * Aceita variações como "37", "35/36" — sempre com parênteses no fim ou espaço antes.
+ * Aceita "(36)", "(36 un)", "(35/36)", "(36/37)", "Algo 36", "Algo 36/37 un".
+ * Boundary antes (início, espaço, "(", "/") e depois (")", espaço, fim, "/")
+ * evita matches dentro de "036" ou "136".
  */
 export function matchesTamanho(desc: string, tamanho: string): boolean {
   const esc = tamanho.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`(\\s|\\()${esc}(\\s+un)?\\s*\\)`);
+  const re = new RegExp(
+    `(?:^|[\\s(/])${esc}(?:\\s*\\/\\s*\\d+)?(?:\\s+un)?(?:\\s*\\)|\\s|$|\\s*\\/)`,
+  );
   return re.test(desc);
 }
