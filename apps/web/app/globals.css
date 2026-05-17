@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Surfaces */
+  --color-paper: #f7f1e6;
+  --color-paper-soft: #fbf6ec;
+  --color-paper-deep: #efe6d2;
+
+  /* Sand (borders / dividers) */
+  --color-sand-100: #f1e8d6;
+  --color-sand-200: #ece2cf;
+  --color-sand-300: #dbcdb1;
+  --color-sand-400: #c2b291;
+
+  /* Ink */
+  --color-ink: #1f1a14;
+  --color-ink-soft: #3a322a;
+  --color-ink-muted: #6b6256;
+
+  /* Brand: terracotta */
+  --color-terracotta-50: #fbe9e2;
+  --color-terracotta-100: #f6d3c5;
+  --color-terracotta-500: #c8593a;
+  --color-terracotta-600: #a8462c;
+  --color-terracotta-700: #863520;
+
+  /* Sage (agent voice) */
+  --color-sage-50: #f1f4ee;
+  --color-sage-100: #e6ede1;
+  --color-sage-500: #7a9070;
+  --color-sage-600: #5e7556;
+  --color-sage-700: #4f6347;
+
+  /* Amber (human operator voice) */
+  --color-amber-50: #fbf3df;
+  --color-amber-100: #f7e7c4;
+  --color-amber-500: #d99c3a;
+  --color-amber-600: #b6801f;
+  --color-amber-700: #8a5d18;
+
+  /* Typography */
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radii */
+  --radius-card: 0.875rem;
+  --radius-bubble: 1.25rem;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(31, 26, 20, 0.04), 0 8px 24px -12px rgba(31, 26, 20, 0.12);
+  --shadow-paper: 0 1px 0 rgba(31, 26, 20, 0.03), 0 12px 32px -16px rgba(31, 26, 20, 0.18);
+
+  /* Animations */
+  --animate-bubble-in: bubble-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+  --animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
+  --animate-scale-in: scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 200ms ease-out both;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-terracotta-100);
+    color: var(--color-terracotta-700);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-sand-300) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-sand-300);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-sand-400);
+    background-clip: content-box;
+  }
+}
+
+/* Paper grain overlay — subtle SVG turbulence at ~3% */
+.grain {
+  position: relative;
+}
+
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 200px 200px;
+}
+
+/* Bubble entry stagger override helper */
+.bubble {
+  animation: var(--animate-bubble-in);
+}
+
+/* Avatar palette utility (matches token colors) */
+.avatar-tone-terracotta {
+  background-color: var(--color-terracotta-500);
+  color: var(--color-paper);
+}
+.avatar-tone-sage {
+  background-color: var(--color-sage-500);
+  color: var(--color-paper);
+}
+.avatar-tone-amber {
+  background-color: var(--color-amber-500);
+  color: var(--color-ink);
+}
+.avatar-tone-ink {
+  background-color: var(--color-ink-soft);
+  color: var(--color-paper);
+}
+.avatar-tone-sand {
+  background-color: var(--color-sand-400);
+  color: var(--color-ink);
+}
