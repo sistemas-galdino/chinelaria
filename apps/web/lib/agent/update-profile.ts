@@ -28,7 +28,7 @@ export async function maybeUpdateProfile(params: {
   try {
     const llm = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_MODEL ?? 'gpt-5',
+      model: process.env.OPENAI_PROFILE_MODEL ?? 'gpt-4.1-mini',
       temperature: 0,
     }).withStructuredOutput(profileExtractionSchema);
 
