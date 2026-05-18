@@ -12,10 +12,10 @@ import { getSupabaseAdminClient } from '../supabase/server.ts';
  */
 
 const profileExtractionSchema = z.object({
-  display_name: z.string().nullish().describe('Nome do cliente, se mencionado'),
-  size_pref: z.string().nullish().describe('Tamanho/numero de calçado, ex: "37" ou "35/36"'),
-  brand_prefs: z.array(z.string()).nullish().describe('Marcas que o cliente demonstrou interesse'),
-  note: z.string().nullish().describe('Anotação curta sobre algo relevante deste turn (max 100 chars)'),
+  display_name: z.string().nullable().describe('Nome do cliente, se mencionado'),
+  size_pref: z.string().nullable().describe('Tamanho/numero de calçado, ex: "37" ou "35/36"'),
+  brand_prefs: z.array(z.string()).nullable().describe('Marcas que o cliente demonstrou interesse'),
+  note: z.string().nullable().describe('Anotação curta sobre algo relevante deste turn (max 100 chars)'),
 });
 
 export async function maybeUpdateProfile(params: {
