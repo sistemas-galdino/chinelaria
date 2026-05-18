@@ -32,3 +32,27 @@ export function pathDoTipo(tipo: string): string {
   }
   return '';
 }
+
+/**
+ * ID da categoria estilo na storefront (?categoria=NNN).
+ * Descobertos via WebFetch da página /chinelo: Dedo=331, Papete=342, Rasteiras=337, Slide=164.
+ */
+export const CATEGORIA_ID: Record<string, number> = {
+  dedo: 331,
+  papete: 342,
+  rasteirinha: 337,
+  rasteira: 337,
+  rasteiras: 337,
+  slide: 164,
+};
+
+/** Detecta se o tipo contém uma palavra-categoria conhecida (matches longest first). */
+export function detectCategoria(tipo: string): { id: number; word: string } | null {
+  const lower = tipo.toLowerCase();
+  const sorted = Object.keys(CATEGORIA_ID).sort((a, b) => b.length - a.length);
+  for (const word of sorted) {
+    const re = new RegExp(`\\b${word}\\b`, 'i');
+    if (re.test(lower)) return { id: CATEGORIA_ID[word]!, word };
+  }
+  return null;
+}

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { MagazordClient } from '../magazord-client.ts';
 import type { MagazordConfig } from '../config.ts';
 import { extractCor, makeSlug, matchesTamanho } from '../slug.ts';
-import { TAMANHO_ID, pathDoTipo } from '../maps.ts';
+import { TAMANHO_ID, detectCategoria, pathDoTipo } from '../maps.ts';
 
 export const buscarComEstoqueInput = z.object({
   tipo: z
@@ -31,16 +31,26 @@ export interface BuscarComEstoqueOutput {
   encontrados: number;
   tamanho: string;
   link_filtrado: string;
+  categoria_detectada?: string;
   produtos?: BuscarComEstoqueProduto[];
   mensagem?: string;
 }
 
-function linkCategoriaFiltrada(config: MagazordConfig, tipo: string, tamanho: string): string {
-  const path = pathDoTipo(tipo);
+function linkCategoriaFiltrada(
+  config: MagazordConfig,
+  tipo: string,
+  tamanho: string,
+  categoriaId?: number,
+): string {
+  let path = pathDoTipo(tipo);
+  // As 4 categorias conhecidas (dedo/papete/rasteirinha/slide) vivem todas em /chinelo
+  if (!path && categoriaId) path = 'chinelo';
   const base = `${config.storeUrl}/${path}`;
-  const id = TAMANHO_ID[tamanho];
-  if (!id) return base;
-  return `${base}?derivacao=${id}`;
+  const params: string[] = [];
+  const tamId = TAMANHO_ID[tamanho];
+  if (tamId) params.push(`derivacao=${tamId}`);
+  if (categoriaId) params.push(`categoria=${categoriaId}`);
+  return params.length ? `${base}?${params.join('&')}` : base;
 }
 
 /**
@@ -62,11 +72,23 @@ export async function buscarComEstoque(
 ): Promise<BuscarComEstoqueOutput> {
   const tipo = input.tipo.trim();
   const tamanho = String(input.tamanho).trim();
-  const linkFiltrado = linkCategoriaFiltrada(config, tipo, tamanho);
 
-  console.log(`[buscar-com-estoque] start tipo="${tipo}" tamanho="${tamanho}"`);
+  // Detecta categoria estilo (dedo/slide/papete/rasteirinha) — Magazord não indexa isso no nome,
+  // então removemos a palavra do search e enviamos categoria no link_filtrado.
+  const categoria = detectCategoria(tipo);
+  const linkFiltrado = linkCategoriaFiltrada(config, tipo, tamanho, categoria?.id);
+  const searchNome = (() => {
+    if (!categoria) return tipo;
+    const stripped = tipo.replace(new RegExp(`\\b${categoria.word}\\b`, 'gi'), '').trim();
+    return stripped || 'chinelo';
+  })();
 
-  const derivRes = await client.produtoDerivacoes(tipo, 50);
+  console.log(
+    `[buscar-com-estoque] start tipo="${tipo}" tamanho="${tamanho}"` +
+      (categoria ? ` categoria=${categoria.word}(${categoria.id}) searchNome="${searchNome}"` : ''),
+  );
+
+  const derivRes = await client.produtoDerivacoes(searchNome, 50);
   const derivItems = derivRes.data?.items ?? [];
 
   const pais = new Map<string, { codigoPai: string; nome: string; marca: string }>();
@@ -89,6 +111,7 @@ export async function buscarComEstoque(
       encontrados: 0,
       tamanho,
       link_filtrado: linkFiltrado,
+      ...(categoria ? { categoria_detectada: categoria.word } : {}),
       mensagem: `Nenhum produto encontrado no tamanho ${tamanho} com estoque no momento.`,
     };
   }
@@ -161,6 +184,7 @@ export async function buscarComEstoque(
       encontrados: 0,
       tamanho,
       link_filtrado: linkFiltrado,
+      ...(categoria ? { categoria_detectada: categoria.word } : {}),
       mensagem: `Nenhum produto encontrado no tamanho ${tamanho} com estoque no momento.`,
     };
   }
@@ -169,6 +193,7 @@ export async function buscarComEstoque(
     encontrados: produtos.length,
     tamanho,
     link_filtrado: linkFiltrado,
+    ...(categoria ? { categoria_detectada: categoria.word } : {}),
     produtos,
   };
 }
