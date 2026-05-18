@@ -56,3 +56,27 @@ export function detectCategoria(tipo: string): { id: number; word: string } | nu
   }
   return null;
 }
+
+/**
+ * Dado um tamanho, retorna as keys de TAMANHO_ID que se sobrepõem ao tamanho pedido.
+ * - "35"    → ["35", "35/36"]      (35 puro + composite que cobre 35)
+ * - "36"    → ["35/36", "36"]      (composite que cobre 36 + 36 puro)
+ * - "35/36" → ["35", "35/36", "36"] (cliente flexível, superset)
+ * - "UN"    → ["UN"]               (sem fragmentação)
+ */
+export function tamanhoFamilyKeys(tamanho: string): string[] {
+  const askedParts = tamanho.includes('/') ? tamanho.split('/') : [tamanho];
+  const result: string[] = [];
+  for (const key of Object.keys(TAMANHO_ID)) {
+    const keyParts = key.includes('/') ? key.split('/') : [key];
+    if (keyParts.some((p) => askedParts.includes(p))) result.push(key);
+  }
+  return result;
+}
+
+/** Mesma família, mas devolve os IDs de derivação (pra montar URL multi-valor). */
+export function tamanhoFamilyIds(tamanho: string): number[] {
+  return tamanhoFamilyKeys(tamanho)
+    .map((k) => TAMANHO_ID[k])
+    .filter((id): id is number => typeof id === 'number');
+}

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { MagazordClient } from '../magazord-client.ts';
 import type { MagazordConfig } from '../config.ts';
 import { extractCor, makeSlug, matchesTamanho } from '../slug.ts';
-import { TAMANHO_ID, detectCategoria, pathDoTipo } from '../maps.ts';
+import { detectCategoria, pathDoTipo, tamanhoFamilyIds } from '../maps.ts';
 
 export const buscarComEstoqueInput = z.object({
   tipo: z
@@ -47,8 +47,9 @@ function linkCategoriaFiltrada(
   if (!path && categoriaId) path = 'chinelo';
   const base = `${config.storeUrl}/${path}`;
   const params: string[] = [];
-  const tamId = TAMANHO_ID[tamanho];
-  if (tamId) params.push(`derivacao=${tamId}`);
+  // Família de tamanhos: pedir 35 inclui também 35/36, pedir 36 inclui 35/36 também, etc.
+  const ids = tamanhoFamilyIds(tamanho);
+  if (ids.length > 0) params.push(`derivacao=${ids.join(',')}`);
   if (categoriaId) params.push(`categoria=${categoriaId}`);
   return params.length ? `${base}?${params.join('&')}` : base;
 }
@@ -149,7 +150,9 @@ export async function buscarComEstoque(
         continue;
       }
       const desc = e.descricaoProduto ?? '';
-      if (!matchesTamanho(desc, tamanho)) {
+      // Família: cliente pedindo "35" também deve casar SKU "(35/36)", e vice-versa.
+      const sizeParts = tamanho.includes('/') ? tamanho.split('/') : [tamanho];
+      if (!sizeParts.some((s) => matchesTamanho(desc, s))) {
         droppedSize++;
         continue;
       }
